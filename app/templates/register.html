@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>使用者註冊</title>
+</head>
+<body>
+    <h2>註冊帳號</h2>
+    <form id="registerForm">
+        <label for="username">帳號：</label>
+        <input type="text" id="username" name="username" required><br><br>
+
+        <label for="password">密碼：</label>
+        <input type="password" id="password" name="password" required><br><br>
+
+        <label for="team">所屬團隊：</label>
+        <input type="text" id="team" name="team"><br><br>
+
+        <label for="location">地點：</label>
+        <input type="text" id="location" name="location"><br><br>
+
+        <button type="submit">註冊</button>
+    </form>
+
+    <p id="result"></p>
+
+    <script>
+        document.getElementById("registerForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const data = {
+                username: document.getElementById("username").value,
+                password: document.getElementById("password").value,
+                team: document.getElementById("team").value,
+                location: document.getElementById("location").value
+            };
+
+            const response = await fetch("http://127.0.0.1:5000/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            document.getElementById("result").innerText = result.message;
+        });
+    </script>
+</body>
+</html>

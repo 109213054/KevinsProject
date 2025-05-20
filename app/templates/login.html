@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>登入介面</title>
+</head>
+<body>
+    <h2>使用者登入</h2>
+    <form id="loginForm">
+        <label for="username">帳號：</label>
+        <input type="text" id="username" name="username" required><br><br>
+
+        <label for="password">密碼：</label>
+        <input type="password" id="password" name="password" required><br><br>
+
+        <button type="submit">登入</button>
+    </form>
+
+    <p id="result"></p>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            const response = await fetch("http://127.0.0.1:5000/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+            document.getElementById("result").innerText = result.message;
+        });
+    </script>
+</body>
+</html>
