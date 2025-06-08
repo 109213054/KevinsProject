@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="container mx-auto py-8">
+        <h1 class="text-2xl font-bold mb-4">Admin Dashboard</h1>
+        <div class="flex">
+            <aside class="w-48 p-4 bg-white border-r">
+                <ul class="space-y-4">
+                    <li class="font-bold relative group">
+                        <span class="block px-4 py-2 rounded cursor-pointer hover:bg-blue-100 hover:text-black {{ 'bg-blue-100 text-black' if request.path.startswith('/auth/register') else 'text-gray-600' }}">
+                            帳戶管理
+                        </span>
+                        <ul class="absolute left-full top-0 hidden group-hover:block bg-white border rounded shadow-md">
+                            <li>
+                                <a href="/auth/register" class="block px-4 py-2 hover:bg-blue-100 hover:text-black text-gray-600">新增帳戶</a>
+                            </li>
+                            <li>
+                                <a href="/auth/modify" class="block px-4 py-2 hover:bg-blue-100 hover:text-black text-gray-600">修改帳戶</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="font-bold">
+                        <a href="/auth/apply" class="block px-4 py-2 rounded hover:bg-blue-100 hover:text-black {{ 'bg-blue-100 text-black' if request.path == '/auth/apply' else 'text-gray-600' }}">
+                            審查管理
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+
+            <div class="flex-1">
+                <table class="w-full text-left bg-white rounded shadow overflow-hidden">
+                    <thead class="bg-gray-100 text-gray-700">
+                        <tr>
+                            <th class="px-4 py-2">使用者 ID</th>
+                            <th class="px-4 py-2">使用者名稱</th>
+                            <th class="px-4 py-2">角色</th>
+                            <th class="px-4 py-2">審核狀態</th>
+                            <th class="px-4 py-2">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTable">
+                        <!-- 使用者資料將由 JavaScript 動態插入 -->
+                    </tbody>
+                </table>
+
+                <div id="historyLog" class="mt-8 bg-white p-4 rounded shadow text-sm">
+                    <h2 class="font-semibold mb-2">審核紀錄：</h2>
+                    <ul id="historyList" class="list-disc list-inside text-gray-600 space-y-1">
+                        <!-- 審核紀錄將由 JavaScript 動態插入 -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchUserDetails() {
+            const response = await fetch("/auth/users/details");
+            const users = await response.json();
+            const userTable = document.getElementById("userTable");
+
+            userTable.innerHTML = users.map((user, index) => `
+                <tr class="border-t">
+                    <td class="px-4 py-2">${index + 1}</td>
+                    <td class="px-4 py-2">${user.username}</td>
+                    <td class="px-4 py-2">${user.requested_role || "N/A"}</td>
+                    <td class="px-4 py-2">${user.review_status === 0 ? "未審查" : "已審查"}</td>
+                    <td class="px-4 py-2 space-x-2">
+                        <button class="px-2 py-1 text-sm bg-red-100 hover:bg-red-200 rounded" onclick="deleteUser('${user.user_id.$oid}')">刪除</button>
+                        <button class="px-2 py-1 text-sm bg-blue-100 hover:bg-blue-200 rounded" onclick="modifyUser('${user.user_id.$oid}')">修改</button>
+                        <button class="px-2 py-1 text-sm bg-green-100 hover:bg-green-200 rounded" onclick="approveUser('${user.user_id.$oid}')">審核</button>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        async function deleteUser(userId) {
+            await fetch(`/auth/users/${userId}`, { method: "DELETE" });
+            fetchUserDetails();
+        }
+
+        async function modifyUser(userId) {
+            // 修改邏輯
+        }
+
+        async function approveUser(userId) {
+            await fetch(`/auth/users/${userId}/approve`, { method: "POST" });
+            fetchUserDetails();
+        }
+
+        fetchUserDetails();
+    </script>
+</body>
+</html>
