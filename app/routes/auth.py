@@ -60,8 +60,12 @@ def login():
 
         if not verify_password(password, user["password_hash"]):
             return jsonify({"message": "密碼錯誤"}), 401
+        
+        # 取出 app.py 裡 request 上綁定的 IP 資訊
+        ip = getattr(request, "visitor_ip", "unknown")
+        is_internal = getattr(request, "is_internal", False)
 
-        return jsonify({"message": "登入成功", "username": username}), 200
+        return jsonify({"message": "登入成功", "username": username,"ip":ip,"source":"內網" if is_internal else "外網"}), 200
     except Exception as e:
         return jsonify({"message": f"登入失敗：{str(e)}"}), 500
 
