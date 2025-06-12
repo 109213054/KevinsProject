@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <aside class="w-64 bg-white shadow-md p-6">
+            <h2 class="text-lg font-bold mb-4">管理選單</h2>
+            <ul class="space-y-4">
+                <li>
+                    <a href="/auth/apply" class="block px-4 py-2 rounded bg-blue-500 text-white text-center hover:bg-blue-600">審查管理</a>
+                </li>
+                <li>
+                    <a href="/auth/register" class="block px-4 py-2 rounded bg-gray-200 text-gray-700 text-center hover:bg-gray-300">帳戶管理</a>
+                </li>
+            </ul>
+        </aside>
+
+        <div class="flex-1 flex items-center justify-center">
+            <div class="bg-white p-8 rounded shadow-md w-full max-w-4xl">
+                <h2 class="text-2xl font-bold mb-6 text-center">審查管理</h2>
+                <table class="w-full text-left bg-white rounded shadow overflow-hidden">
+                    <thead class="bg-gray-100 text-gray-700">
+                        <tr>
+                            <th class="px-4 py-2">使用者 ID</th>
+                            <th class="px-4 py-2">使用者名稱</th>
+                            <th class="px-4 py-2">角色</th>
+                            <th class="px-4 py-2">審核狀態</th>
+                            <th class="px-4 py-2">審核</th>
+                            <th class="px-4 py-2">權限</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTable">
+                        <!-- 使用者資料將由 JavaScript 動態插入 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchUserDetails() {
+            const response = await fetch("/auth/users/details");
+            const users = await response.json();
+            const userTable = document.getElementById("userTable");
+
+            userTable.innerHTML = users.map((user, index) => `
+                <tr class="border-t">
+                    <td class="px-4 py-2">${index + 1}</td>
+                    <td class="px-4 py-2">${user.username}</td>
+                    <td class="px-4 py-2">${user.requested_role}</td>
+                    <td class="requested_   px-4 py-2">
+                        ${user.review_status === 0 ? "未審查" : user.review_status === 1 ? "審核中" : "已審查"}
+                    </td>
+                    <td class="px-4 py-2 space-x-2">
+                        <button class="px-2 py-1 text-sm bg-red-100 hover:bg-red-200 rounded" onclick="deleteUser('${user.username}')">刪除</button>
+                        ${user.review_status === 2 ? 
+                            '<button class="px-2 py-1 text-sm bg-gray-300 rounded cursor-not-allowed">審核</button>' : 
+                            `<button class="px-2 py-1 text-sm bg-green-100 hover:bg-green-200 rounded" onclick="confirmApprove('${user.username}')">審核</button>`
+                        }
+                    </td>
+                    <td class="px-4 py-2">
+                        <div class="flex space-x-4">
+                            <div class="flex items-center">
+                                <span class="dot ${user.review_status === 2 && user.requested_permissions.includes('read_users') ? 'bg-blue-500' : 'bg-gray-300'}" 
+                                      ${user.review_status !== 2 ? 'style="pointer-events: none; opacity: 0.5;"' : ''} 
+                                      onclick="togglePermission('${user.username}', 'read_users')"></span>
+                                <span class="ml-2">讀</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="dot ${user.review_status === 2 && user.requested_permissions.includes('edit_users') ? 'bg-blue-500' : 'bg-gray-300'}" 
+                                      ${user.review_status !== 2 ? 'style="pointer-events: none; opacity: 0.5;"' : ''} 
+                                      onclick="togglePermission('${user.username}', 'edit_users')"></span>
+                                <span class="ml-2">改</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="dot ${user.review_status === 2 && user.requested_permissions.includes('delete_users') ? 'bg-blue-500' : 'bg-gray-300'}" 
+                                      ${user.review_status !== 2 ? 'style="pointer-events: none; opacity: 0.5;"' : ''} 
+                                      onclick="togglePermission('${user.username}', 'delete_users')"></span>
+                                <span class="ml-2">刪</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        async function deleteUser(username) {
+            await fetch(`/auth/users/${username}`, { method: "DELETE" });
+            fetchUserDetails();
+        }
+
+        async function modifyUser(username) {
+            const response = await fetch(`/auth/users/${username}/details`);
+            const user = await response.json();
+
+            const permissions = user.requested_permissions;
+            const message = `使用者 ${username} 的權限：\n` +
+                `讀：${permissions.includes('read_users') ? '有' : '無'}\n` +
+                `改：${permissions.includes('edit_users') ? '有' : '無'}\n` +
+                `刪：${permissions.includes('delete_users') ? '有' : '無'}`;
+
+            alert(message);
+        }
+
+        async function confirmApprove(username) {
+            if (confirm("是否需要審核？")) {
+                await approveUser(username);
+            }
+        }
+
+        async function approveUser(username) {
+            await fetch(`/auth/users/${username}/approve`, { 
+                method: "POST", 
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ review_status: 2 })
+            });
+            fetchUserDetails();
+        }
+
+        const updatedPermissions = {};
+
+        async function togglePermission(username, permission) {
+            const dotElement = document.querySelector(`.dot[onclick="togglePermission('${username}', '${permission}')"]`);
+            const isBlue = dotElement.classList.contains('bg-blue-500');
+
+            if (!isBlue) {
+                if (confirm(`是否要新增 ${permission} 權限？`)) {
+                    await fetch(`/auth/users/${username}/update-permissions`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "add", permission })
+                    });
+                    fetchUserDetails();
+                }
+            }
+        }
+
+        fetchUserDetails();
+    </script>
+
+    <style>
+        .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        .bg-blue-500 {
+            background-color: #3b82f6;
+        }
+        .bg-gray-300 {
+            background-color: #d1d5db;
+        }
+    </style>
+</body>
+</html>

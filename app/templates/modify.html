@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>修改帳戶</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <aside class="w-64 bg-white shadow-md p-6">
+            <h2 class="text-lg font-bold mb-4">帳戶管理</h2>
+            <ul class="space-y-4">
+                <li>
+                    <a href="/auth/register" class="block px-4 py-2 rounded bg-gray-200 text-gray-700 text-center hover:bg-gray-300">新增帳戶</a>
+                </li>
+                <li>
+                    <a href="/auth/modify" class="block px-4 py-2 rounded bg-blue-500 text-white text-center hover:bg-blue-600">修改帳戶</a>
+                </li>
+                <li>
+                    <a href="/auth/apply" class="block px-4 py-2 rounded bg-gray-200 text-gray-700 text-center hover:bg-gray-300">返回審查管理</a>
+                </li>
+            </ul>
+        </aside>
+
+        <div class="flex-1 flex items-center justify-center">
+            <div class="bg-white p-8 rounded shadow-md w-full max-w-4xl">
+                <h2 class="text-2xl font-bold mb-6 text-center">修改帳號</h2>
+
+                <table class="w-full text-left bg-white rounded shadow overflow-hidden">
+                    <thead class="bg-gray-100 text-gray-700">
+                        <tr>
+                            <th class="px-4 py-2">帳號</th>
+                            <th class="px-4 py-2">所屬團隊</th>
+                            <th class="px-4 py-2">地點</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTable">
+                        <!-- 使用者資料將由 JavaScript 動態插入 -->
+                    </tbody>
+                </table>
+
+                <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 mt-6">更新</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchUsers() {
+            const response = await fetch("/auth/users");
+            const users = await response.json();
+            const userTable = document.getElementById("userTable");
+
+            userTable.innerHTML = users.map(user => `
+                <tr class="border-t">
+                    <td class="px-4 py-2">${user.username}</td>
+                    <td class="px-4 py-2">${user.attributes.team || "N/A"}</td>
+                    <td class="px-4 py-2">${user.attributes.location || "N/A"}</td>
+                </tr>
+            `).join("");
+        }
+
+        fetchUsers();
+    </script>
+</body>
+</html>
