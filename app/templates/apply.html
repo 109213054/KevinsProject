@@ -68,28 +68,43 @@
                 <tr class="border-t">
                     <td class="px-4 py-2">${index + 1}</td>
                     <td class="px-4 py-2">${user.username}</td>
-                    <td class="px-4 py-2">${user.requested_role || "N/A"}</td>
-                    <td class="px-4 py-2">${user.review_status === 0 ? "未審查" : "已審查"}</td>
+                    <td class="px-4 py-2">${user.requested_role}</td>
+                    <td class="px-4 py-2">
+                        ${user.review_status === 0 ? "未審查" : user.review_status === 1 ? "審核中" : "已審查"}
+                    </td>
                     <td class="px-4 py-2 space-x-2">
-                        <button class="px-2 py-1 text-sm bg-red-100 hover:bg-red-200 rounded" onclick="deleteUser('${user.user_id.$oid}')">刪除</button>
-                        <button class="px-2 py-1 text-sm bg-blue-100 hover:bg-blue-200 rounded" onclick="modifyUser('${user.user_id.$oid}')">修改</button>
-                        <button class="px-2 py-1 text-sm bg-green-100 hover:bg-green-200 rounded" onclick="approveUser('${user.user_id.$oid}')">審核</button>
+                        <button class="px-2 py-1 text-sm bg-red-100 hover:bg-red-200 rounded" onclick="deleteUser('${user.username}')">刪除</button>
+                        <button class="px-2 py-1 text-sm bg-blue-100 hover:bg-blue-200 rounded" onclick="modifyUser('${user.username}')">修改</button>
+                        ${user.requested_role === 'user' && user.review_status === 0 ? 
+                            '<button class="px-2 py-1 text-sm bg-gray-300 rounded cursor-not-allowed">審核</button>' : 
+                            `<button class="px-2 py-1 text-sm bg-green-100 hover:bg-green-200 rounded" onclick="confirmApprove('${user.username}')">審核</button>`
+                        }
                     </td>
                 </tr>
             `).join("");
         }
 
-        async function deleteUser(userId) {
-            await fetch(`/auth/users/${userId}`, { method: "DELETE" });
+        async function deleteUser(username) {
+            await fetch(`/auth/users/${username}`, { method: "DELETE" });
             fetchUserDetails();
         }
 
-        async function modifyUser(userId) {
+        async function modifyUser(username) {
             // 修改邏輯
         }
 
-        async function approveUser(userId) {
-            await fetch(`/auth/users/${userId}/approve`, { method: "POST" });
+        async function confirmApprove(username) {
+            if (confirm("是否需要審核？")) {
+                await approveUser(username);
+            }
+        }
+
+        async function approveUser(username) {
+            await fetch(`/auth/users/${username}/approve`, { 
+                method: "POST", 
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ review_status: 2 })
+            });
             fetchUserDetails();
         }
 

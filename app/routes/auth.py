@@ -69,6 +69,10 @@ def login():
         if not verify_password(password, user["password_hash"]):
             return jsonify({"message": "密碼錯誤"}), 401
 
+        # 如果角色是 admin，跳轉到 apply 頁面
+        if user.get("role") == "admin":
+            return jsonify({"message": "登入成功", "redirect": "/auth/apply"}), 200
+
         return jsonify({"message": "登入成功", "username": username}), 200
     except Exception as e:
         return jsonify({"message": f"登入失敗：{str(e)}"}), 500
@@ -115,16 +119,16 @@ def modify_user(user_id):
     return jsonify({"message": "使用者已更新"})
 
 # 審核使用者
-@auth_bp.route("/users/<int:user_id>/approve", methods=["POST"])
-def approve_user(user_id):
+@auth_bp.route("/users/<string:username>/approve", methods=["POST"])
+def approve_user(username):
     db = get_db()
-    user = db.users.find_one({"id": user_id})
+    user = db.users.find_one({"username": username})
     if not user:
         return jsonify({"message": "使用者不存在"}), 404
 
-    new_status = user.get("status", 0) + 1
-    db.users.update_one({"id": user_id}, {"$set": {"status": new_status}})
-    return jsonify({"message": "使用者已審核", "new_status": new_status})
+    new_status = user.get("review_status", 0) + 1
+    db.users.update_one({"username":username}, {"$set": {"review_status": new_status}})
+    return jsonify({"message": "已審核", "review_status": new_status})
 
 # 修改特定使用者的資料（根據索引，從 1 開始）
 @auth_bp.route("/users/index/<int:index>", methods=["PUT"])
@@ -154,16 +158,26 @@ def modify_user_by_index(index):
 def get_user_details():
     db = get_db()
     users = db.users.find()
+    role_collection = db.roles  # 獲取 apply 集合
+    apply_collection = db.apply  # 獲取 apply 集合
 
     formatted_users = []
     for user in users:
+        # 根據用戶名查找 apply 集合中的對應文件
+        role_data = role_collection.find_one({"username": user["username"]})
+        role = role_data["role"] if role_data and "role" in role_data else 0
+
+        # 根據用戶名查找 apply 集合中的對應文件
+        apply_data = apply_collection.find_one({"username": user["username"]})
+        review_status = apply_data["review_status"] if apply_data and "review_status" in apply_data else 0
+
         formatted_users.append({
-            "user_id": {"$oid": str(user["_id"])},
+            "user_id": str(user["_id"]),
             "username": user.get("username", ""),
-            "requested_role": user.get("requested_role", ""),
+            "requested_role": role,
             "requested_permissions": user.get("requested_permissions", []),
-            "review_status": user.get("review_status", 0),
-            "created_at": {"$date": user["created_at"].isoformat()} if "created_at" in user else None
+            "review_status": review_status,
+            "created_at": user["created_at"].isoformat() if "created_at" in user else None
         })
 
     return jsonify(formatted_users)

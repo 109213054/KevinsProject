@@ -33,7 +33,13 @@
             });
 
             const result = await response.json();
-            document.getElementById("result").innerText = result.message;
+            if (result.redirect) {
+                // 如果後端返回 redirect，跳轉到指定頁面
+                window.location.href = result.redirect;
+            } else {
+                // 顯示訊息
+                document.getElementById("result").innerText = result.message;
+            }
         });
     </script>
 </body>
