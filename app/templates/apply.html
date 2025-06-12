@@ -5,34 +5,23 @@
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
 </head>
-<body class="bg-gray-50">
-    <div id="app" class="container mx-auto py-8">
-        <h1 class="text-2xl font-bold mb-4">Admin Dashboard</h1>
-        <div class="flex">
-            <aside class="w-48 p-4 bg-white border-r">
-                <ul class="space-y-4">
-                    <li class="font-bold relative group">
-                        <span class="block px-4 py-2 rounded cursor-pointer hover:bg-blue-100 hover:text-black {{ 'bg-blue-100 text-black' if request.path.startswith('/auth/register') else 'text-gray-600' }}">
-                            帳戶管理
-                        </span>
-                        <ul class="absolute left-full top-0 hidden group-hover:block bg-white border rounded shadow-md">
-                            <li>
-                                <a href="/auth/register" class="block px-4 py-2 hover:bg-blue-100 hover:text-black text-gray-600">新增帳戶</a>
-                            </li>
-                            <li>
-                                <a href="/auth/modify" class="block px-4 py-2 hover:bg-blue-100 hover:text-black text-gray-600">修改帳戶</a>
-                            </li>
-                        </ul>
-                    </li>
-                    <li class="font-bold">
-                        <a href="/auth/apply" class="block px-4 py-2 rounded hover:bg-blue-100 hover:text-black {{ 'bg-blue-100 text-black' if request.path == '/auth/apply' else 'text-gray-600' }}">
-                            審查管理
-                        </a>
-                    </li>
-                </ul>
-            </aside>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <aside class="w-64 bg-white shadow-md p-6">
+            <h2 class="text-lg font-bold mb-4">管理選單</h2>
+            <ul class="space-y-4">
+                <li>
+                    <a href="/auth/apply" class="block px-4 py-2 rounded bg-blue-500 text-white text-center hover:bg-blue-600">審查管理</a>
+                </li>
+                <li>
+                    <a href="/auth/register" class="block px-4 py-2 rounded bg-gray-200 text-gray-700 text-center hover:bg-gray-300">帳戶管理</a>
+                </li>
+            </ul>
+        </aside>
 
-            <div class="flex-1">
+        <div class="flex-1 flex items-center justify-center">
+            <div class="bg-white p-8 rounded shadow-md w-full max-w-4xl">
+                <h2 class="text-2xl font-bold mb-6 text-center">審查管理</h2>
                 <table class="w-full text-left bg-white rounded shadow overflow-hidden">
                     <thead class="bg-gray-100 text-gray-700">
                         <tr>
@@ -40,20 +29,14 @@
                             <th class="px-4 py-2">使用者名稱</th>
                             <th class="px-4 py-2">角色</th>
                             <th class="px-4 py-2">審核狀態</th>
-                            <th class="px-4 py-2">操作</th>
+                            <th class="px-4 py-2">審核</th>
+                            <th class="px-4 py-2">權限</th>
                         </tr>
                     </thead>
                     <tbody id="userTable">
                         <!-- 使用者資料將由 JavaScript 動態插入 -->
                     </tbody>
                 </table>
-
-                <div id="historyLog" class="mt-8 bg-white p-4 rounded shadow text-sm">
-                    <h2 class="font-semibold mb-2">審核紀錄：</h2>
-                    <ul id="historyList" class="list-disc list-inside text-gray-600 space-y-1">
-                        <!-- 審核紀錄將由 JavaScript 動態插入 -->
-                    </ul>
-                </div>
             </div>
         </div>
     </div>
@@ -69,16 +52,37 @@
                     <td class="px-4 py-2">${index + 1}</td>
                     <td class="px-4 py-2">${user.username}</td>
                     <td class="px-4 py-2">${user.requested_role}</td>
-                    <td class="px-4 py-2">
+                    <td class="requested_   px-4 py-2">
                         ${user.review_status === 0 ? "未審查" : user.review_status === 1 ? "審核中" : "已審查"}
                     </td>
                     <td class="px-4 py-2 space-x-2">
                         <button class="px-2 py-1 text-sm bg-red-100 hover:bg-red-200 rounded" onclick="deleteUser('${user.username}')">刪除</button>
-                        <button class="px-2 py-1 text-sm bg-blue-100 hover:bg-blue-200 rounded" onclick="modifyUser('${user.username}')">修改</button>
-                        ${user.requested_role === 'user' && user.review_status === 0 ? 
+                        ${user.review_status === 2 ? 
                             '<button class="px-2 py-1 text-sm bg-gray-300 rounded cursor-not-allowed">審核</button>' : 
                             `<button class="px-2 py-1 text-sm bg-green-100 hover:bg-green-200 rounded" onclick="confirmApprove('${user.username}')">審核</button>`
                         }
+                    </td>
+                    <td class="px-4 py-2">
+                        <div class="flex space-x-4">
+                            <div class="flex items-center">
+                                <span class="dot ${user.review_status === 2 && user.requested_permissions.includes('read_users') ? 'bg-blue-500' : 'bg-gray-300'}" 
+                                      ${user.review_status !== 2 ? 'style="pointer-events: none; opacity: 0.5;"' : ''} 
+                                      onclick="togglePermission('${user.username}', 'read_users')"></span>
+                                <span class="ml-2">讀</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="dot ${user.review_status === 2 && user.requested_permissions.includes('edit_users') ? 'bg-blue-500' : 'bg-gray-300'}" 
+                                      ${user.review_status !== 2 ? 'style="pointer-events: none; opacity: 0.5;"' : ''} 
+                                      onclick="togglePermission('${user.username}', 'edit_users')"></span>
+                                <span class="ml-2">改</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="dot ${user.review_status === 2 && user.requested_permissions.includes('delete_users') ? 'bg-blue-500' : 'bg-gray-300'}" 
+                                      ${user.review_status !== 2 ? 'style="pointer-events: none; opacity: 0.5;"' : ''} 
+                                      onclick="togglePermission('${user.username}', 'delete_users')"></span>
+                                <span class="ml-2">刪</span>
+                            </div>
+                        </div>
                     </td>
                 </tr>
             `).join("");
@@ -90,7 +94,16 @@
         }
 
         async function modifyUser(username) {
-            // 修改邏輯
+            const response = await fetch(`/auth/users/${username}/details`);
+            const user = await response.json();
+
+            const permissions = user.requested_permissions;
+            const message = `使用者 ${username} 的權限：\n` +
+                `讀：${permissions.includes('read_users') ? '有' : '無'}\n` +
+                `改：${permissions.includes('edit_users') ? '有' : '無'}\n` +
+                `刪：${permissions.includes('delete_users') ? '有' : '無'}`;
+
+            alert(message);
         }
 
         async function confirmApprove(username) {
@@ -108,7 +121,42 @@
             fetchUserDetails();
         }
 
+        const updatedPermissions = {};
+
+        async function togglePermission(username, permission) {
+            const dotElement = document.querySelector(`.dot[onclick="togglePermission('${username}', '${permission}')"]`);
+            const isBlue = dotElement.classList.contains('bg-blue-500');
+
+            if (!isBlue) {
+                if (confirm(`是否要新增 ${permission} 權限？`)) {
+                    await fetch(`/auth/users/${username}/update-permissions`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "add", permission })
+                    });
+                    fetchUserDetails();
+                }
+            }
+        }
+
         fetchUserDetails();
     </script>
+
+    <style>
+        .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        .bg-blue-500 {
+            background-color: #3b82f6;
+        }
+        .bg-gray-300 {
+            background-color: #d1d5db;
+        }
+    </style>
 </body>
 </html>

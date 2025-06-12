@@ -3,26 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <title>使用者註冊</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-    <h2>註冊帳號</h2>
-    <form id="registerForm">
-        <label for="username">帳號：</label>
-        <input type="text" id="username" name="username" required><br><br>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <aside class="w-64 bg-white shadow-md p-6">
+            <h2 class="text-lg font-bold mb-4">帳戶管理</h2>
+            <ul class="space-y-4">
+                <li>
+                    <a href="/auth/register" class="block px-4 py-2 rounded bg-blue-500 text-white text-center hover:bg-blue-600">新增帳戶</a>
+                </li>
+                <li>
+                    <a href="/auth/modify" class="block px-4 py-2 rounded bg-gray-200 text-gray-700 text-center hover:bg-gray-300">修改帳戶</a>
+                </li>
+                <li>
+                    <a href="/auth/apply" class="block px-4 py-2 rounded bg-gray-200 text-gray-700 text-center hover:bg-gray-300">返回審查管理</a>
+                </li>
+            </ul>
+        </aside>
 
-        <label for="password">密碼：</label>
-        <input type="password" id="password" name="password" required><br><br>
+        <div class="flex-1 flex items-center justify-center">
+            <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+                <h2 class="text-2xl font-bold mb-6 text-center">註冊帳號</h2>
+                <form id="registerForm" class="space-y-4">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700">帳號</label>
+                        <input type="text" id="username" name="username" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
 
-        <label for="team">所屬團隊：</label>
-        <input type="text" id="team" name="team"><br><br>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">密碼</label>
+                        <input type="password" id="password" name="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
 
-        <label for="location">地點：</label>
-        <input type="text" id="location" name="location"><br><br>
+                    <div>
+                        <label for="team" class="block text-sm font-medium text-gray-700">所屬團隊</label>
+                        <input type="text" id="team" name="team" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
 
-        <button type="submit">註冊</button>
-    </form>
+                    <div>
+                        <label for="location" class="block text-sm font-medium text-gray-700">地點</label>
+                        <input type="text" id="location" name="location" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
 
-    <p id="result"></p>
+                    <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">註冊</button>
+                </form>
+
+                <p id="result" class="mt-4 text-center text-sm text-gray-600"></p>
+            </div>
+        </div>
+    </div>
 
     <script>
         document.getElementById("registerForm").addEventListener("submit", async function(e) {

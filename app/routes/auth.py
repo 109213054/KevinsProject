@@ -88,6 +88,11 @@ def login_page():
 def apply_page():
     return render_template("apply.html")
 
+# 顯示 modify.html 頁面
+@auth_bp.route("/modify", methods=["GET"])
+def modify_page():
+    return render_template("modify.html")
+
 # 獲取所有使用者
 @auth_bp.route("/users", methods=["GET"])
 def get_users():
@@ -122,12 +127,12 @@ def modify_user(user_id):
 @auth_bp.route("/users/<string:username>/approve", methods=["POST"])
 def approve_user(username):
     db = get_db()
-    user = db.users.find_one({"username": username})
+    user = db.apply.find_one({"username": username})
     if not user:
         return jsonify({"message": "使用者不存在"}), 404
 
     new_status = user.get("review_status", 0) + 1
-    db.users.update_one({"username":username}, {"$set": {"review_status": new_status}})
+    db.apply.update_one({"username":username}, {"$set": {"review_status": new_status}})
     return jsonify({"message": "已審核", "review_status": new_status})
 
 # 修改特定使用者的資料（根據索引，從 1 開始）
@@ -170,14 +175,43 @@ def get_user_details():
         # 根據用戶名查找 apply 集合中的對應文件
         apply_data = apply_collection.find_one({"username": user["username"]})
         review_status = apply_data["review_status"] if apply_data and "review_status" in apply_data else 0
+        requested_permissions = apply_data["requested_permissions"] if apply_data and "requested_permissions" in apply_data else 0
 
         formatted_users.append({
             "user_id": str(user["_id"]),
             "username": user.get("username", ""),
             "requested_role": role,
-            "requested_permissions": user.get("requested_permissions", []),
+            "requested_permissions": requested_permissions,
             "review_status": review_status,
             "created_at": user["created_at"].isoformat() if "created_at" in user else None
         })
 
     return jsonify(formatted_users)
+
+# 更新使用者權限
+@auth_bp.route("/users/<string:username>/update-permissions", methods=["POST"])
+def update_permissions(username):
+    db = get_db()
+    user = db.apply.find_one({"username": username})
+    if not user:
+        return jsonify({"message": "使用者不存在"}), 404
+
+    data = request.get_json()
+    action = data.get("action")
+    permission = data.get("permission")
+
+    if not permission:
+        return jsonify({"message": "缺少權限資訊"}), 400
+
+    requested_permissions = user.get("requested_permissions", [])
+
+    if action == "add":
+        if permission not in requested_permissions:
+            requested_permissions.append(permission)
+    elif action == "remove":
+        if permission in requested_permissions:
+            requested_permissions.remove(permission)
+
+    db.apply.update_one({"username": username}, {"$set": {"requested_permissions": requested_permissions}})
+
+    return jsonify({"message": "權限已更新", "requested_permissions": requested_permissions})
